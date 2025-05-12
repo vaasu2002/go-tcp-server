@@ -1,18 +1,20 @@
-# Simple TCP Server in Go
+# Concurrent TCP Server in Go
 
-This repository contains a basic TCP server implementation written in Go that demonstrates the fundamental concepts of network programming using the Go standard library.
+This repository contains a concurrent TCP server implementation written in Go that demonstrates fundamental concepts of network programming and concurrency using the Go standard library.
 
 ## Overview
 
 This TCP server:
 - Listens for incoming TCP connections on port 1729
-- Accepts a client connection
+- Accepts multiple client connections concurrently
+- Handles each connection in a separate goroutine
 - Reads client requests using a buffer
-- Processes the request (simulated with a 1-second delay)
+- Processes each request (simulated with a 4-second delay)
 - Responds with an HTTP 200 OK message
 - Closes the connection after responding
+- Continues accepting new connections without waiting for previous ones to complete
 
-The implementation serves as a foundational example of socket programming in Go, illustrating core networking concepts.
+The implementation serves as a practical example of socket programming and concurrency in Go, illustrating core networking concepts.
 
 ## Concepts Covered
 
@@ -23,19 +25,25 @@ The implementation serves as a foundational example of socket programming in Go,
 - **Buffers**: Temporary memory storage for data transfer between processes or devices
 - **Blocking I/O Operations**: System calls that pause execution until data is available or operation completes
 - **HTTP Response**: Simple implementation of HTTP protocol response formatting
+- **Concurrency**: Handling multiple client connections simultaneously
+- **Goroutines**: Go's lightweight threads for concurrent execution
+- **Infinite Loop Server**: Continuous listening for and accepting new connections
 
 ## How It Works
 
 1. The server creates a TCP listener on port 1729
-2. It waits for an incoming client connection (blocking on the `Accept()` call)
-3. When a connection is established, it calls the `ops` function to handle the connection
-4. Inside `ops`:
+2. It enters an infinite loop to continuously accept connections
+3. For each incoming connection:
+   - The server accepts the connection (blocking on the `Accept()` call)
+   - Once established, it immediately spawns a new goroutine with `go ops(conn)`
+   - The main thread returns to accepting new connections while the goroutine handles the client
+4. Inside each goroutine (`ops` function):
    - A 1KB buffer is created to store incoming data
    - The server waits for client data (blocking on the `Read()` call)
-   - After receiving data, the server simulates processing with a 1-second delay
+   - After receiving data, the server simulates processing with a 4-second delay
    - The server sends back an HTTP 200 OK response with "Hello World!"
    - The connection is closed
-5. The server prints a confirmation message with connection details
+5. Multiple clients can be served simultaneously without waiting for previous requests to complete
 
 ## Prerequisites
 
@@ -58,47 +66,26 @@ The implementation serves as a foundational example of socket programming in Go,
 
 ## Testing the Connection
 
-You can test the server using various TCP clients. The server will respond with an HTTP 200 OK message:
+You can test the server using various TCP clients. The server will respond with an HTTP 200 OK message after a 4-second simulated processing time:
+
+### Testing Concurrency
+To test the concurrency feature, open multiple terminal windows and run the client commands simultaneously. You'll see that the server handles all connections concurrently.
 
 ### Using curl (Recommended)
 ```
 curl http://localhost:1729
 ```
-You should see: `Hello World!`
-
-### Using Telnet
-```
-telnet localhost 1729
-```
-After connecting, type any message and press Enter. You'll receive the HTTP response.
+You should see: `Hello World!` after a 4-second delay.
 
 ### Using Netcat
 ```
 nc localhost 1729
 ```
-After connecting, type any message and press Enter. You'll receive the HTTP response.
+After connecting, type any message and press Enter. You'll receive the HTTP response after 4 seconds.
 
-### Using a Web Browser
-Open your browser and navigate to:
+### Using Load Testing Tools
+You can also use tools like Apache Bench or wrk to test multiple concurrent connections:
 ```
-http://localhost:1729
+ab -n 100 -c 10 http://localhost:1729/
 ```
-
-## Key Components Explained
-
-### Buffers
-The server uses a buffer (`buf := make([]byte, 1024)`) to temporarily store incoming data from clients:
-- **Purpose**: Provides a memory area to hold client requests for processing
-- **Size**: 1KB (1024 bytes) is allocated to store incoming data
-- **Operation**: The `conn.Read(buf)` call fills this buffer with data from the client
-
-### Blocking I/O Operations
-The server uses several blocking operations:
-- **`listener.Accept()`**: Blocks until a client connects
-- **`conn.Read(buf)`**: Blocks until data is received from the client
-- These operations pause execution of the program until the event they're waiting for occurs
-
-### Process Simulation
-The server includes a simulated processing delay:
-- **`time.Sleep(1*time.Second)`**: Simulates server-side processing time
-- In a real application, this would be replaced with actual request handling logic
+This will send 100 requests with a concurrency level of 10.
