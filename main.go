@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 )
+
 // TCP    - most reliable way for machines to communicate over a network
 // Socket - abstraction(logical entities which wraps entier communication specifics) provided by OS to enable communication(end points for two way communication)
 // TCP Server - a process that runs in a machine that listens to a port that understands TCP
@@ -12,18 +14,37 @@ import (
 
 // Step1 - listening on a port
 // Step2 - wait for client to connection(we will use accept system call which is a blocking system call so server could not proced until some client connects)
+// Step3 - Read the request and send the response (read and write system call are blocking)
 
+
+func ops(conn net.Conn){
+	// when a client sends data to your server, the operating system places this data in a system buffer. 
+	// then we copy data system buffer to application buffer
+	// once we have data in out(applciation) buffer, we can examine it, modify it etc.
+	buf := make([]byte,1024) // creating byte buffer. 1KB is size of buffer
+	_,err := conn.Read(buf) // waiting until client sends us the request 
+	if(err!=nil){
+		log.Fatalln(err)
+	}
+	// doing some processs
+	time.Sleep(4*time.Second)
+
+	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\nHello World!\r\n"))
+	conn.Close()
+}
 func main() {
 	// listening for tcp protocol on port :1729
 	// this tcp server(which is a process) is now reserving a port 1729
 	listner, err := net.Listen("tcp",":1729") 
 	if(err!=nil){
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 	fmt.Println("Waiting for connection to be established")
 	conn,err := listner.Accept(); //  waiting for some client to connect
 	if(err!=nil){
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
-	fmt.Println("hello world ",conn)
+	fmt.Println("Connection established");
+	ops(conn)
+	fmt.Println("Returning result");
 }
