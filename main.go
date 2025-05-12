@@ -15,21 +15,24 @@ import (
 // Step1 - listening on a port
 // Step2 - wait for client to connection(we will use accept system call which is a blocking system call so server could not proced until some client connects)
 // Step3 - Read the request and send the response (read and write system call are blocking)
-
+// Step4 - Continuouly waiting for client to connect with the tcp server(will use infinite loop here)
 
 func ops(conn net.Conn){
 	// when a client sends data to your server, the operating system places this data in a system buffer. 
 	// then we copy data system buffer to application buffer
 	// once we have data in out(applciation) buffer, we can examine it, modify it etc.
 	buf := make([]byte,1024) // creating byte buffer. 1KB is size of buffer
+	fmt.Println("Reading request");
 	_,err := conn.Read(buf) // waiting until client sends us the request 
 	if(err!=nil){
 		log.Fatalln(err)
 	}
+	fmt.Println("Processing!!");
 	// doing some processs
 	time.Sleep(4*time.Second)
-
-	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\nHello World!\r\n"))
+	fmt.Println("Writing response");
+	conn.Write([]byte("HTTP/1.1 200 OK\r\n\r\nHello World!\r\n"));
+	fmt.Println("Closing current connection");
 	conn.Close()
 }
 func main() {
@@ -39,12 +42,14 @@ func main() {
 	if(err!=nil){
 		log.Fatalln(err)
 	}
-	fmt.Println("Waiting for connection to be established")
-	conn,err := listner.Accept(); //  waiting for some client to connect
-	if(err!=nil){
-		log.Fatalln(err)
+	for{
+		fmt.Println("Waiting for connection to be established")
+		conn,err := listner.Accept(); //  waiting for some client to connect
+		if(err!=nil){
+			log.Fatalln(err)
+		}
+		fmt.Println("Connection established");
+		ops(conn)
 	}
-	fmt.Println("Connection established");
-	ops(conn)
-	fmt.Println("Returning result");
+	// fmt.Println("Returning result");
 }
