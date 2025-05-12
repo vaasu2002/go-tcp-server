@@ -53,7 +53,7 @@ The implementation serves as a practical example of socket programming and concu
 
 1. Clone this repository
    ```
-   git clone https://github.com/yourusername/go-tcp-server.git
+   git clone https://github.com/vaasu2002/go-tcp-server.git
    cd go-tcp-server
    ```
 
